@@ -228,6 +228,44 @@
             left: 0;
         }
         
+        .auto-derivative {
+            background-color: #e8f6f3;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .edit-derivative {
+            display: flex;
+            align-items: center;
+            margin-top: 8px;
+        }
+        
+        .edit-derivative input {
+            margin-right: 8px;
+        }
+        
+        .edit-derivative label {
+            margin-bottom: 0;
+            font-weight: normal;
+        }
+        
+        .power-example {
+            display: flex;
+            align-items: center;
+            margin-top: 5px;
+            font-size: 0.9rem;
+            color: #2c3e50;
+        }
+        
+        .power-example code {
+            background-color: #f1f1f1;
+            padding: 2px 5px;
+            border-radius: 3px;
+            margin: 0 5px;
+        }
+        
         @media (max-width: 768px) {
             .toolbar {
                 flex-direction: column;
@@ -293,6 +331,9 @@
                     <li>e - Número de Euler (2.7182...)</li>
                     <li>x^y - x elevado a la y (potencia)</li>
                 </ul>
+                <div class="power-example">
+                    Ejemplo: <code>x^2</code> para x², <code>2^x</code> para 2ˣ, <code>x^(1/2)</code> para √x
+                </div>
             </div>
             
             <div id="punto-fijo-results" class="results">
@@ -306,20 +347,27 @@
         <div id="newton" class="method-content">
             <div class="instructions">
                 <h3>Método de Newton-Raphson</h3>
-                <p>Ingrese la función f(x), su derivada f'(x), el valor inicial, el error mínimo y el máximo de iteraciones.</p>
+                <p>Ingrese la función f(x), el valor inicial, el error mínimo y el máximo de iteraciones. La derivada se calculará automáticamente, pero puede editarla si es necesario.</p>
             </div>
             
             <div class="input-group">
                 <label for="newton-function">Función f(x):</label>
-                <input type="text" id="newton-function" placeholder="Ej: x^2 - 4" value="x^2 - 4">
+                <input type="text" id="newton-function" placeholder="Ej: x^2 - 4" value="x^2 - 4" oninput="calcularDerivada()">
             </div>
             <div class="input-group">
                 <label for="newton-derivative">Derivada f'(x):</label>
-                <input type="text" id="newton-derivative" placeholder="Ej: 2*x" value="2*x">
+                <input type="text" id="newton-derivative" placeholder="La derivada se calculará automáticamente">
+                <div class="edit-derivative">
+                    <input type="checkbox" id="editar-derivada" onchange="toggleEditarDerivada()">
+                    <label for="editar-derivada">Editar derivada manualmente</label>
+                </div>
+                <div class="auto-derivative">
+                    <p><strong>Nota:</strong> La derivada se calcula automáticamente. Para funciones complejas, puede editar manualmente la derivada.</p>
+                </div>
             </div>
             <div class="input-group">
                 <label for="newton-x0">Valor inicial (x₀):</label>
-                <input type="number" id="newton-x0" step="any" value="3">
+                <input type="number" id="newton-x0" step="any" value="1">
             </div>
             <div class="input-group">
                 <label for="newton-error">Error mínimo aceptable:</label>
@@ -347,6 +395,9 @@
                     <li>e - Número de Euler (2.7182...)</li>
                     <li>x^y - x elevado a la y (potencia)</li>
                 </ul>
+                <div class="power-example">
+                    Ejemplo: <code>x^2</code> para x², <code>2^x</code> para 2ˣ, <code>x^(1/2)</code> para √x
+                </div>
             </div>
             
             <div id="newton-results" class="results">
@@ -401,6 +452,9 @@
                     <li>e - Número de Euler (2.7182...)</li>
                     <li>x^y - x elevado a la y (potencia)</li>
                 </ul>
+                <div class="power-example">
+                    Ejemplo: <code>x^2</code> para x², <code>2^x</code> para 2ˣ, <code>x^(1/2)</code> para √x
+                </div>
             </div>
             
             <div id="secante-results" class="results">
@@ -412,6 +466,9 @@
     </div>
 
     <script>
+        // Variable para controlar si la derivada es editable
+        let derivadaEditable = false;
+        
         // Función para mostrar u ocultar métodos
         function showMethod(methodId) {
             // Ocultar todos los métodos
@@ -427,20 +484,156 @@
                 btn.classList.remove('active');
             });
             document.getElementById(`btn-${methodId}`).classList.add('active');
+            
+            // Si es el método de Newton, calcular la derivada
+            if (methodId === 'newton') {
+                calcularDerivada();
+            }
+        }
+        
+        // Función para alternar la edición de la derivada
+        function toggleEditarDerivada() {
+            derivadaEditable = document.getElementById('editar-derivada').checked;
+            const derivadaInput = document.getElementById('newton-derivative');
+            
+            if (derivadaEditable) {
+                derivadaInput.removeAttribute('readonly');
+                derivadaInput.style.backgroundColor = '#fff';
+            } else {
+                derivadaInput.setAttribute('readonly', 'true');
+                derivadaInput.style.backgroundColor = '#f5f5f5';
+                calcularDerivada();
+            }
+        }
+        
+        // Función para calcular la derivada automáticamente
+        function calcularDerivada() {
+            if (derivadaEditable) return;
+            
+            const fExpr = document.getElementById('newton-function').value;
+            if (!fExpr) return;
+            
+            try {
+                // Simplificación: derivada de funciones comunes
+                let derivative = '';
+                
+                // Manejar e^(-x) - x
+                if (fExpr.includes('e^(-x)')) {
+                    derivative = fExpr.replace('e^(-x)', '-e^(-x)');
+                    if (fExpr.includes(' - x')) {
+                        derivative += ' - 1';
+                    } else if (fExpr.includes(' + x')) {
+                        derivative += ' + 1';
+                    }
+                }
+                // Manejar potencias: derivada de x^n es n*x^(n-1)
+                else if (fExpr.includes('x^')) {
+                    // Buscar patrones de potencias
+                    const powerPattern = /([+-]?)\s*(\d+\.?\d*)?\*?x\^(\d+)/g;
+                    let match;
+                    let terms = [];
+                    
+                    while ((match = powerPattern.exec(fExpr)) !== null) {
+                        const sign = match[1] || '+';
+                        const coefficient = match[2] ? parseFloat(match[2]) : 1;
+                        const exponent = parseFloat(match[3]);
+                        
+                        const newCoefficient = coefficient * exponent;
+                        const newExponent = exponent - 1;
+                        
+                        let term = '';
+                        if (newCoefficient !== 1) {
+                            term += newCoefficient + '*';
+                        }
+                        term += 'x';
+                        if (newExponent !== 1) {
+                            term += '^' + newExponent;
+                        }
+                        
+                        terms.push(sign + ' ' + term);
+                    }
+                    
+                    derivative = terms.join(' ');
+                    
+                    // Manejar términos constantes
+                    if (fExpr.includes(' - x') && !fExpr.includes('x^')) {
+                        derivative += ' - 1';
+                    } else if (fExpr.includes(' + x') && !fExpr.includes('x^')) {
+                        derivative += ' + 1';
+                    }
+                } else if (fExpr.includes('sin(x)')) {
+                    derivative = fExpr.replace(/sin\(x\)/g, 'cos(x)');
+                } else if (fExpr.includes('cos(x)')) {
+                    derivative = fExpr.replace(/cos\(x\)/g, '-sin(x)');
+                } else if (fExpr.includes('tan(x)')) {
+                    derivative = fExpr.replace(/tan\(x\)/g, '1/(cos(x)^2)');
+                } else if (fExpr.includes('log(x)') || fExpr.includes('ln(x)')) {
+                    derivative = fExpr.replace(/(log\(x\)|ln\(x\))/g, '1/x');
+                } else if (fExpr.includes('exp(x)') || fExpr.includes('e^x')) {
+                    derivative = fExpr.replace(/(exp\(x\)|e\^x)/g, 'exp(x)');
+                } else if (fExpr.includes('sqrt(x)')) {
+                    derivative = fExpr.replace(/sqrt\(x\)/g, '1/(2*sqrt(x))');
+                } else {
+                    // Derivada por defecto (aproximación para funciones simples)
+                    derivative = fExpr.replace(/x/g, '1');
+                }
+                
+                // Limpiar la derivada
+                derivative = derivative.replace(/\+\s*\-/g, '- ');
+                derivative = derivative.replace(/\-\s*\-/g, '+ ');
+                derivative = derivative.trim();
+                
+                // Si no se encontró ninguna derivada, usar un valor por defecto
+                if (derivative === fExpr) {
+                    derivative = fExpr.replace(/x/g, '1');
+                }
+                
+                document.getElementById('newton-derivative').value = derivative;
+            } catch (error) {
+                document.getElementById('newton-derivative').value = "Error calculando derivada";
+            }
+        }
+        
+        // Función para normalizar expresiones (manejar -e, -sin, etc.)
+        function normalizarExpresion(expr) {
+            // Manejar casos como -e, -sin, -cos, etc.
+            expr = expr.replace(/([+\-*/^]|^)\s*-e\b/g, '$1(-1)*e');
+            expr = expr.replace(/([+\-*/^]|^)\s*-sin/g, '$1(-1)*sin');
+            expr = expr.replace(/([+\-*/^]|^)\s*-cos/g, '$1(-1)*cos');
+            expr = expr.replace(/([+\-*/^]|^)\s*-tan/g, '$1(-1)*tan');
+            expr = expr.replace(/([+\-*/^]|^)\s*-log/g, '$1(-1)*log');
+            expr = expr.replace(/([+\-*/^]|^)\s*-exp/g, '$1(-1)*exp');
+            expr = expr.replace(/([+\-*/^]|^)\s*-sqrt/g, '$1(-1)*sqrt');
+            expr = expr.replace(/([+\-*/^]|^)\s*-abs/g, '$1(-1)*abs');
+            
+            // Manejar e^(-x) correctamente
+            expr = expr.replace(/e\^\(-x\)/g, 'Math.exp(-x)');
+            expr = expr.replace(/e\^\((-?\d+)x\)/g, 'Math.exp($1*x)');
+            
+            // Asegurar que haya un * entre paréntesis y variables/funciones
+            expr = expr.replace(/(\d)(\()/g, '$1*$2');
+            expr = expr.replace(/(\))(\w)/g, '$1*$2');
+            expr = expr.replace(/(\))(\()/g, '$1*$2');
+            
+            return expr;
         }
         
         // Función para evaluar expresiones matemáticas con 9 decimales
         function evaluarFuncion(expr, x) {
+            // Normalizar la expresión primero
+            expr = normalizarExpresion(expr);
+            
             // Reemplazar constantes matemáticas
             expr = expr.replace(/π/g, Math.PI.toString());
             expr = expr.replace(/pi/gi, Math.PI.toString());
-            expr = expr.replace(/e\b/g, Math.E.toString());
+            expr = expr.replace(/\be\b/g, Math.E.toString());
             
             // Reemplazar funciones matemáticas
             expr = expr.replace(/sin\(/g, 'Math.sin(');
             expr = expr.replace(/cos\(/g, 'Math.cos(');
             expr = expr.replace(/tan\(/g, 'Math.tan(');
             expr = expr.replace(/log\(/g, 'Math.log(');
+            expr = expr.replace(/ln\(/g, 'Math.log(');
             expr = expr.replace(/log10\(/g, 'Math.log10(');
             expr = expr.replace(/exp\(/g, 'Math.exp(');
             expr = expr.replace(/sqrt\(/g, 'Math.sqrt(');
