@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Métodos Numéricos Avanzados</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(90deg, #2c3e50, #4a6491);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .toolbar {
+            display: flex;
+            background: linear-gradient(90deg, #34495e, #2c3e50);
+            padding: 0;
+        }
+        
+        .toolbar button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: none;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            outline: none;
+        }
+        
+        .toolbar button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .toolbar button.active {
+            background: #3498db;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .method-content {
+            display: none;
+            padding: 25px;
+        }
+        
+        .method-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        
+        button.calculate {
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            width: 100%;
+            margin-top: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        button.calculate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        button.calculate:active {
+            transform: translateY(0);
+        }
+        
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 5px solid #3498db;
+            display: none;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #2c3e50;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        tr:hover {
+            background-color: #e9f7fe;
+        }
+        
+        .final-result {
+            font-weight: bold;
+            margin-top: 20px;
+            padding: 15px;
+            background: linear-gradient(90deg, #e8f4fc, #c5e2f7);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.2rem;
+            color: #2c3e50;
+        }
+        
+        .instructions {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 5px solid #2c3e50;
+        }
+        
+        .instructions h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .function-help {
+            background-color: #e8f4fc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .function-help h4 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .function-help ul {
+            columns: 2;
+            list-style-type: none;
+        }
+        
+        .function-help li {
+            margin-bottom: 5px;
+            padding-left: 15px;
+            position: relative;
+        }
+        
+        .function-help li:before {
+            content: "•";
+            color: #3498db;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .toolbar {
+                flex-direction: column;
+            }
+            
+            .function-help ul {
+                columns: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Métodos Numéricos Avanzados</h1>
+            <p class="description">Herramienta para calcular raíces de funciones con métodos iterativos</p>
+        </header>
+        
+        <div class="toolbar">
+            <button id="btn-punto-fijo" class="active" onclick="showMethod('punto-fijo')">Punto Fijo</button>
+            <button id="btn-newton" onclick="showMethod('newton')">Newton-Raphson</button>
+            <button id="btn-secante" onclick="showMethod('secante')">Secante</button>
+        </div>
+        
+        <!-- Método del Punto Fijo -->
+        <div id="punto-fijo" class="method-content active">
+            <div class="instructions">
+                <h3>Método del Punto Fijo</h3>
+                <p>Ingrese la función g(x) donde x = g(x), el valor inicial, el error mínimo y el máximo de iteraciones.</p>
+            </div>
+            
+            <div class="input-group">
+                <label for="g-function">Función g(x) (x = g(x)):</label>
+                <input type="text" id="g-function" placeholder="Ej: (x + 4/x)/2" value="(x + 4/x)/2">
+            </div>
+            <div class="input-group">
+                <label for="punto-fijo-x0">Valor inicial (x₀):</label>
+                <input type="number" id="punto-fijo-x0" step="any" value="1">
+            </div>
+            <div class="input-group">
+                <label for="punto-fijo-error">Error mínimo aceptable:</label>
+                <input type="number" id="punto-fijo-error" step="any" value="0.0001" min="0.000001">
+            </div>
+            <div class="input-group">
+                <label for="punto-fijo-iterations">Máximo de iteraciones:</label>
+                <input type="number" id="punto-fijo-iterations" value="100" min="1">
+            </div>
+            
+            <button class="calculate" onclick="calcularPuntoFijo()">Calcular</button>
+            
+            <div class="function-help">
+                <h4>Funciones matemáticas disponibles:</h4>
+                <ul>
+                    <li>sin(x) - Seno</li>
+                    <li>cos(x) - Coseno</li>
+                    <li>tan(x) - Tangente</li>
+                    <li>log(x) - Logaritmo natural</li>
+                    <li>log10(x) - Logaritmo base 10</li>
+                    <li>exp(x) - Exponencial e^x</li>
+                    <li>sqrt(x) - Raíz cuadrada</li>
+                    <li>abs(x) - Valor absoluto</li>
+                    <li>π - Pi (3.1416...)</li>
+                    <li>e - Número de Euler (2.7182...)</li>
+                    <li>x^y - x elevado a la y (potencia)</li>
+                </ul>
+            </div>
+            
+            <div id="punto-fijo-results" class="results">
+                <h3>Resultados:</h3>
+                <div id="punto-fijo-table-container"></div>
+                <div id="punto-fijo-final" class="final-result"></div>
+            </div>
+        </div>
+        
+        <!-- Método de Newton -->
+        <div id="newton" class="method-content">
+            <div class="instructions">
+                <h3>Método de Newton-Raphson</h3>
+                <p>Ingrese la función f(x), su derivada f'(x), el valor inicial, el error mínimo y el máximo de iteraciones.</p>
+            </div>
+            
+            <div class="input-group">
+                <label for="newton-function">Función f(x):</label>
+                <input type="text" id="newton-function" placeholder="Ej: x^2 - 4" value="x^2 - 4">
+            </div>
+            <div class="input-group">
+                <label for="newton-derivative">Derivada f'(x):</label>
+                <input type="text" id="newton-derivative" placeholder="Ej: 2*x" value="2*x">
+            </div>
+            <div class="input-group">
+                <label for="newton-x0">Valor inicial (x₀):</label>
+                <input type="number" id="newton-x0" step="any" value="3">
+            </div>
+            <div class="input-group">
+                <label for="newton-error">Error mínimo aceptable:</label>
+                <input type="number" id="newton-error" step="any" value="0.0001" min="0.000001">
+            </div>
+            <div class="input-group">
+                <label for="newton-iterations">Máximo de iteraciones:</label>
+                <input type="number" id="newton-iterations" value="100" min="1">
+            </div>
+            
+            <button class="calculate" onclick="calcularNewton()">Calcular</button>
+            
+            <div class="function-help">
+                <h4>Funciones matemáticas disponibles:</h4>
+                <ul>
+                    <li>sin(x) - Seno</li>
+                    <li>cos(x) - Coseno</li>
+                    <li>tan(x) - Tangente</li>
+                    <li>log(x) - Logaritmo natural</li>
+                    <li>log10(x) - Logaritmo base 10</li>
+                    <li>exp(x) - Exponencial e^x</li>
+                    <li>sqrt(x) - Raíz cuadrada</li>
+                    <li>abs(x) - Valor absoluto</li>
+                    <li>π - Pi (3.1416...)</li>
+                    <li>e - Número de Euler (2.7182...)</li>
+                    <li>x^y - x elevado a la y (potencia)</li>
+                </ul>
+            </div>
+            
+            <div id="newton-results" class="results">
+                <h3>Resultados:</h3>
+                <div id="newton-table-container"></div>
+                <div id="newton-final" class="final-result"></div>
+            </div>
+        </div>
+        
+        <!-- Método de la Secante -->
+        <div id="secante" class="method-content">
+            <div class="instructions">
+                <h3>Método de la Secante</h3>
+                <p>Ingrese la función f(x), dos valores iniciales, el error mínimo y el máximo de iteraciones.</p>
+            </div>
+            
+            <div class="input-group">
+                <label for="secante-function">Función f(x):</label>
+                <input type="text" id="secante-function" placeholder="Ej: x^2 - 4" value="x^2 - 4">
+            </div>
+            <div class="input-group">
+                <label for="secante-x0">Primer valor (x₀):</label>
+                <input type="number" id="secante-x0" step="any" value="1">
+            </div>
+            <div class="input-group">
+                <label for="secante-x1">Segundo valor (x₁):</label>
+                <input type="number" id="secante-x1" step="any" value="3">
+            </div>
+            <div class="input-group">
+                <label for="secante-error">Error mínimo aceptable:</label>
+                <input type="number" id="secante-error" step="any" value="0.0001" min="0.000001">
+            </div>
+            <div class="input-group">
+                <label for="secante-iterations">Máximo de iteraciones:</label>
+                <input type="number" id="secante-iterations" value="100" min="1">
+            </div>
+            
+            <button class="calculate" onclick="calcularSecante()">Calcular</button>
+            
+            <div class="function-help">
+                <h4>Funciones matemáticas disponibles:</h4>
+                <ul>
+                    <li>sin(x) - Seno</li>
+                    <li>cos(x) - Coseno</li>
+                    <li>tan(x) - Tangente</li>
+                    <li>log(x) - Logaritmo natural</li>
+                    <li>log10(x) - Logaritmo base 10</li>
+                    <li>exp(x) - Exponencial e^x</li>
+                    <li>sqrt(x) - Raíz cuadrada</li>
+                    <li>abs(x) - Valor absoluto</li>
+                    <li>π - Pi (3.1416...)</li>
+                    <li>e - Número de Euler (2.7182...)</li>
+                    <li>x^y - x elevado a la y (potencia)</li>
+                </ul>
+            </div>
+            
+            <div id="secante-results" class="results">
+                <h3>Resultados:</h3>
+                <div id="secante-table-container"></div>
+                <div id="secante-final" class="final-result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Función para mostrar u ocultar métodos
+        function showMethod(methodId) {
+            // Ocultar todos los métodos
+            document.querySelectorAll('.method-content').forEach(method => {
+                method.classList.remove('active');
+            });
+            
+            // Mostrar el método seleccionado
+            document.getElementById(methodId).classList.add('active');
+            
+            // Actualizar botones del toolbar
+            document.querySelectorAll('.toolbar button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`btn-${methodId}`).classList.add('active');
+        }
+        
+        // Función para evaluar expresiones matemáticas con 9 decimales
+        function evaluarFuncion(expr, x) {
+            // Reemplazar constantes matemáticas
+            expr = expr.replace(/π/g, Math.PI.toString());
+            expr = expr.replace(/pi/gi, Math.PI.toString());
+            expr = expr.replace(/e\b/g, Math.E.toString());
+            
+            // Reemplazar funciones matemáticas
+            expr = expr.replace(/sin\(/g, 'Math.sin(');
+            expr = expr.replace(/cos\(/g, 'Math.cos(');
+            expr = expr.replace(/tan\(/g, 'Math.tan(');
+            expr = expr.replace(/log\(/g, 'Math.log(');
+            expr = expr.replace(/log10\(/g, 'Math.log10(');
+            expr = expr.replace(/exp\(/g, 'Math.exp(');
+            expr = expr.replace(/sqrt\(/g, 'Math.sqrt(');
+            expr = expr.replace(/abs\(/g, 'Math.abs(');
+            
+            // Reemplazar '^' por '**' para potencias
+            expr = expr.replace(/\^/g, '**');
+            
+            // Crear función con la expresión
+            try {
+                const func = new Function('x', 'Math', `return ${expr};`);
+                const result = func(x, Math);
+                
+                // Redondear a 9 decimales
+                return Math.round(result * 1e9) / 1e9;
+            } catch (error) {
+                throw new Error(`Error al evaluar la función: ${error.message}`);
+            }
+        }
+        
+        // Método del Punto Fijo
+        function calcularPuntoFijo() {
+            const gExpr = document.getElementById('g-function').value;
+            const x0 = parseFloat(document.getElementById('punto-fijo-x0').value);
+            const errorMinimo = parseFloat(document.getElementById('punto-fijo-error').value);
+            const maxIteraciones = parseInt(document.getElementById('punto-fijo-iterations').value);
+            
+            const resultados = document.getElementById('punto-fijo-results');
+            const tablaContainer = document.getElementById('punto-fijo-table-container');
+            const resultadoFinal = document.getElementById('punto-fijo-final');
+            
+            // Validar entrada
+            if (!gExpr || isNaN(x0) || isNaN(errorMinimo) || isNaN(maxIteraciones)) {
+                alert("Por favor, complete todos los campos correctamente.");
+                return;
+            }
+            
+            try {
+                // Verificar que la función es válida
+                evaluarFuncion(gExpr, x0);
+            } catch (error) {
+                alert(error.message);
+                return;
+            }
+            
+            let iteraciones = [];
+            let xActual = x0;
+            let error = 100;
+            let iteracion = 0;
+            
+            // Encabezado de la tabla
+            let tablaHTML = `
+                <table>
+                    <tr>
+                        <th>Iteración</th>
+                        <th>x<sub>k</sub></th>
+                        <th>g(x<sub>k</sub>)</th>
+                        <th>Error (%)</th>
+                    </tr>
+            `;
+            
+            // Primera iteración
+            let gx = evaluarFuncion(gExpr, xActual);
+            tablaHTML += `
+                <tr>
+                    <td>0</td>
+                    <td>${xActual.toFixed(9)}</td>
+                    <td>${gx.toFixed(9)}</td>
+                    <td>-</td>
+                </tr>
+            `;
+            
+            // Iteraciones siguientes
+            for (iteracion = 1; iteracion <= maxIteraciones && error > errorMinimo; iteracion++) {
+                let xAnterior = xActual;
+                xActual = gx;
+                gx = evaluarFuncion(gExpr, xActual);
+                
+                error = Math.abs((xActual - xAnterior) / xActual) * 100;
+                error = Math.round(error * 1e9) / 1e9; // Redondear a 9 decimales
+                
+                tablaHTML += `
+                    <tr>
+                        <td>${iteracion}</td>
+                        <td>${xActual.toFixed(9)}</td>
+                        <td>${gx.toFixed(9)}</td>
+                        <td>${error.toFixed(9)}</td>
+                    </tr>
+                `;
+                
+                if (error > 100 && iteracion > 2) {
+                    resultadoFinal.innerHTML = "El método diverge. Intente con otra función g(x) o valor inicial.";
+                    break;
+                }
+            }
+            
+            tablaHTML += `</table>`;
+            tablaContainer.innerHTML = tablaHTML;
+            
+            if (error <= errorMinimo) {
+                resultadoFinal.innerHTML = `La raíz aproximada es: ${xActual.toFixed(9)} (Error: ${error.toFixed(9)}%)`;
+            } else if (iteracion > maxIteraciones) {
+                resultadoFinal.innerHTML = `Máximo de iteraciones alcanzado. Mejor aproximación: ${xActual.toFixed(9)} (Error: ${error.toFixed(9)}%)`;
+            }
+            
+            resultados.style.display = 'block';
+        }
+        
+        // Método de Newton-Raphson
+        function calcularNewton() {
+            const fExpr = document.getElementById('newton-function').value;
+            const fPrimaExpr = document.getElementById('newton-derivative').value;
+            const x0 = parseFloat(document.getElementById('newton-x0').value);
+            const errorMinimo = parseFloat(document.getElementById('newton-error').value);
+            const maxIteraciones = parseInt(document.getElementById('newton-iterations').value);
+            
+            const resultados = document.getElementById('newton-results');
+            const tablaContainer = document.getElementById('newton-table-container');
+            const resultadoFinal = document.getElementById('newton-final');
+            
+            // Validar entrada
+            if (!fExpr || !fPrimaExpr || isNaN(x0) || isNaN(errorMinimo) || isNaN(maxIteraciones)) {
+                alert("Por favor, complete todos los campos correctamente.");
+                return;
+            }
+            
+            try {
+                // Verificar que las funciones son válidas
+                evaluarFuncion(fExpr, x0);
+                evaluarFuncion(fPrimaExpr, x0);
+            } catch (error) {
+                alert(error.message);
+                return;
+            }
+            
+            let iteraciones = [];
+            let xActual = x0;
+            let error = 100;
+            let iteracion = 0;
+            
+            // Encabezado de la tabla
+            let tablaHTML = `
+                <table>
+                    <tr>
+                        <th>Iteración</th>
+                        <th>x<sub>k</sub></th>
+                        <th>f(x<sub>k</sub>)</th>
+                        <th>f'(x<sub>k</sub>)</th>
+                        <th>Error (%)</th>
+                    </tr>
+            `;
+            
+            // Primera iteración
+            let fx = evaluarFuncion(fExpr, xActual);
+            let fPrimaX = evaluarFuncion(fPrimaExpr, xActual);
+            
+            tablaHTML += `
+                <tr>
+                    <td>0</td>
+                    <td>${xActual.toFixed(9)}</td>
+                    <td>${fx.toFixed(9)}</td>
+                    <td>${fPrimaX.toFixed(9)}</td>
+                    <td>-</td>
+                </tr>
+            `;
+            
+            // Iteraciones siguientes
+            for (iteracion = 1; iteracion <= maxIteraciones && error > errorMinimo; iteracion++) {
+                let xAnterior = xActual;
+                
+                // Calcular siguiente aproximación: x_{k+1} = x_k - f(x_k)/f'(x_k)
+                if (Math.abs(fPrimaX) < 1e-10) {
+                    resultadoFinal.innerHTML = "La derivada es casi cero. El método no puede continuar.";
+                    break;
+                }
+                
+                xActual = xActual - fx / fPrimaX;
+                xActual = Math.round(xActual * 1e9) / 1e9; // Redondear a 9 decimales
+                
+                fx = evaluarFuncion(fExpr, xActual);
+                fPrimaX = evaluarFuncion(fPrimaExpr, xActual);
+                
+                error = Math.abs((xActual - xAnterior) / xActual) * 100;
+                error = Math.round(error * 1e9) / 1e9; // Redondear a 9 decimales
+                
+                tablaHTML += `
+                    <tr>
+                        <td>${iteracion}</td>
+                        <td>${xActual.toFixed(9)}</td>
+                        <td>${fx.toFixed(9)}</td>
+                        <td>${fPrimaX.toFixed(9)}</td>
+                        <td>${error.toFixed(9)}</td>
+                    </tr>
+                `;
+            }
+            
+            tablaHTML += `</table>`;
+            tablaContainer.innerHTML = tablaHTML;
+            
+            if (error <= errorMinimo) {
+                resultadoFinal.innerHTML = `La raíz aproximada es: ${xActual.toFixed(9)} (Error: ${error.toFixed(9)}%)`;
+            } else if (iteracion > maxIteraciones) {
+                resultadoFinal.innerHTML = `Máximo de iteraciones alcanzado. Mejor aproximación: ${xActual.toFixed(9)} (Error: ${error.toFixed(9)}%)`;
+            }
+            
+            resultados.style.display = 'block';
+        }
+        
+        // Método de la Secante
+        function calcularSecante() {
+            const fExpr = document.getElementById('secante-function').value;
+            const x0 = parseFloat(document.getElementById('secante-x0').value);
+            const x1 = parseFloat(document.getElementById('secante-x1').value);
+            const errorMinimo = parseFloat(document.getElementById('secante-error').value);
+            const maxIteraciones = parseInt(document.getElementById('secante-iterations').value);
+            
+            const resultados = document.getElementById('secante-results');
+            const tablaContainer = document.getElementById('secante-table-container');
+            const resultadoFinal = document.getElementById('secante-final');
+            
+            // Validar entrada
+            if (!fExpr || isNaN(x0) || isNaN(x1) || isNaN(errorMinimo) || isNaN(maxIteraciones)) {
+                alert("Por favor, complete todos los campos correctamente.");
+                return;
+            }
+            
+            try {
+                // Verificar que la función es válida
+                evaluarFuncion(fExpr, x0);
+                evaluarFuncion(fExpr, x1);
+            } catch (error) {
+                alert(error.message);
+                return;
+            }
+            
+            let iteraciones = [];
+            let xAnterior = x0;
+            let xActual = x1;
+            let error = 100;
+            let iteracion = 0;
+            
+            // Encabezado de la tabla
+            let tablaHTML = `
+                <table>
+                    <tr>
+                        <th>Iteración</th>
+                        <th>x<sub>k-1</sub></th>
+                        <th>x<sub>k</sub></th>
+                        <th>f(x<sub>k-1</sub>)</th>
+                        <th>f(x<sub>k</sub>)</th>
+                        <th>Error (%)</th>
+                    </tr>
+            `;
+            
+            // Valores iniciales
+            let fxAnterior = evaluarFuncion(fExpr, xAnterior);
+            let fxActual = evaluarFuncion(fExpr, xActual);
+            
+            tablaHTML += `
+                <tr>
+                    <td>0</td>
+                    <td>${xAnterior.toFixed(9)}</td>
+                    <td>${xActual.toFixed(9)}</td>
+                    <td>${fxAnterior.toFixed(9)}</td>
+                    <td>${fxActual.toFixed(9)}</td>
+                    <td>-</td>
+                </tr>
+            `;
+            
+            // Iteraciones siguientes
+            for (iteracion = 1; iteracion <= maxIteraciones && error > errorMinimo; iteracion++) {
+                if (Math.abs(fxActual - fxAnterior) < 1e-10) {
+                    resultadoFinal.innerHTML = "Diferencia entre f(x) casi cero. El método no puede continuar.";
+                    break;
+                }
+                
+                // Calcular siguiente aproximación: x_{k+1} = x_k - f(x_k)*((x_k - x_{k-1})/(f(x_k) - f(x_{k-1})))
+                let xSiguiente = xActual - fxActual * (xActual - xAnterior) / (fxActual - fxAnterior);
+                xSiguiente = Math.round(xSiguiente * 1e9) / 1e9; // Redondear a 9 decimales
+                
+                error = Math.abs((xSiguiente - xActual) / xSiguiente) * 100;
+                error = Math.round(error * 1e9) / 1e9; // Redondear a 9 decimales
+                
+                // Actualizar valores para la siguiente iteración
+                xAnterior = xActual;
+                xActual = xSiguiente;
+                fxAnterior = fxActual;
+                fxActual = evaluarFuncion(fExpr, xActual);
+                
+                tablaHTML += `
+                    <tr>
+                        <td>${iteracion}</td>
+                        <td>${xAnterior.toFixed(9)}</td>
+                        <td>${xActual.toFixed(9)}</td>
+                        <td>${fxAnterior.toFixed(9)}</td>
+                        <td>${fxActual.toFixed(9)}</td>
+                        <td>${error.toFixed(9)}</td>
+                    </tr>
+                `;
+            }
+            
+            tablaHTML += `</table>`;
+            tablaContainer.innerHTML = tablaHTML;
+            
+            if (error <= errorMinimo) {
+                resultadoFinal.innerHTML = `La raíz aproximada es: ${xActual.toFixed(9)} (Error: ${error.toFixed(9)}%)`;
+            } else if (iteracion > maxIteraciones) {
+                resultadoFinal.innerHTML = `Máximo de iteraciones alcanzado. Mejor aproximación: ${xActual.toFixed(9)} (Error: ${error.toFixed(9)}%)`;
+            }
+            
+            resultados.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
