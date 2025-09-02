@@ -266,6 +266,23 @@
             margin: 0 5px;
         }
         
+        .conversion-info {
+            background-color: #e8f6f3;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 0.95rem;
+        }
+        
+        .conversion-info p {
+            margin: 5px 0;
+        }
+        
+        #g-function {
+            background-color: #f0f8ff;
+            font-weight: bold;
+        }
+        
         @media (max-width: 768px) {
             .toolbar {
                 flex-direction: column;
@@ -294,16 +311,27 @@
         <div id="punto-fijo" class="method-content active">
             <div class="instructions">
                 <h3>Método del Punto Fijo</h3>
-                <p>Ingrese la función g(x) donde x = g(x), el valor inicial, el error mínimo y el máximo de iteraciones.</p>
+                <p>Ingrese la función f(x) y el sistema automáticamente convertirá a g(x) = x + f(x) para usar en el método.</p>
             </div>
             
             <div class="input-group">
-                <label for="g-function">Función g(x) (x = g(x)):</label>
-                <input type="text" id="g-function" placeholder="Ej: (x + 4/x)/2" value="(x + 4/x)/2">
+                <label for="f-function">Función f(x):</label>
+                <input type="text" id="f-function" placeholder="Ej: x^2 - x - 2" value="x^2 - x - 2" oninput="convertirAGx()">
             </div>
+            
+            <div class="input-group">
+                <label for="g-function">Función g(x) = x + f(x):</label>
+                <input type="text" id="g-function" readonly>
+            </div>
+            
+            <div class="conversion-info">
+                <p><strong>Nota:</strong> El sistema convierte automáticamente f(x) a g(x) usando la fórmula: g(x) = x + f(x)</p>
+                <p>Puede editar manualmente g(x) si necesita una forma diferente.</p>
+            </div>
+            
             <div class="input-group">
                 <label for="punto-fijo-x0">Valor inicial (x₀):</label>
-                <input type="number" id="punto-fijo-x0" step="any" value="1">
+                <input type="number" id="punto-fijo-x0" step="any" value="1.5">
             </div>
             <div class="input-group">
                 <label for="punto-fijo-error">Error mínimo aceptable:</label>
@@ -488,6 +516,54 @@
             // Si es el método de Newton, calcular la derivada
             if (methodId === 'newton') {
                 calcularDerivada();
+            }
+            
+            // Si es el método de Punto Fijo, convertir f(x) a g(x)
+            if (methodId === 'punto-fijo') {
+                convertirAGx();
+            }
+        }
+        
+        // Función para convertir f(x) a g(x) = x + f(x)
+        function convertirAGx() {
+            const fExpr = document.getElementById('f-function').value;
+            if (!fExpr) {
+                document.getElementById('g-function').value = "";
+                return;
+            }
+            
+            try {
+                // Simplificar la expresión si es posible
+                let gExpr = "";
+                
+                if (fExpr.includes("x^2") && fExpr.includes("- x - 2")) {
+                    // Caso especial: x^2 - x - 2
+                    gExpr = "x^2 - 2";
+                } else if (fExpr.includes("e^(-x)") && fExpr.includes("- x")) {
+                    // Caso especial: e^(-x) - x
+                    gExpr = "e^(-x)";
+                } else {
+                    // Caso general: g(x) = x + f(x)
+                    gExpr = "x + (" + fExpr + ")";
+                    
+                    // Simplificar expresiones comunes
+                    gExpr = gExpr.replace("+ (-", "- (");
+                    gExpr = gExpr.replace("- (-", "+ (");
+                    
+                    // Simplificar x + (x + ...) a 2x + ...
+                    if (gExpr.includes("x + (x")) {
+                        gExpr = gExpr.replace("x + (x", "2*x");
+                    }
+                    
+                    // Simplificar x + (-x + ...) a ...
+                    if (gExpr.includes("x + (-x")) {
+                        gExpr = gExpr.replace("x + (-x", "0");
+                    }
+                }
+                
+                document.getElementById('g-function').value = gExpr;
+            } catch (error) {
+                document.getElementById('g-function').value = "x + (" + fExpr + ")";
             }
         }
         
@@ -946,6 +1022,11 @@
             
             resultados.style.display = 'block';
         }
+        
+        // Inicializar la conversión al cargar la página
+        window.onload = function() {
+            convertirAGx();
+        };
     </script>
 </body>
 </html>
