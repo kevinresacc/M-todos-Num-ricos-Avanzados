@@ -311,22 +311,22 @@
         <div id="punto-fijo" class="method-content active">
             <div class="instructions">
                 <h3>Método del Punto Fijo</h3>
-                <p>Ingrese la función f(x) y el sistema automáticamente convertirá a g(x) = x + f(x) para usar en el método.</p>
+                <p>Ingrese la función f(x) y la función g(x) que desea utilizar. Si no ingresa g(x), se usará por defecto g(x) = x + f(x).</p>
             </div>
             
             <div class="input-group">
                 <label for="f-function">Función f(x):</label>
-                <input type="text" id="f-function" placeholder="Ej: x^2 - x - 2" value="x^2 - x - 2" oninput="convertirAGx()">
+                <input type="text" id="f-function" placeholder="Ej: x^2 - x - 2" value="x^2 - x - 2" oninput="sugerirGx()">
             </div>
             
             <div class="input-group">
-                <label for="g-function">Función g(x) = x + f(x):</label>
-                <input type="text" id="g-function" readonly>
+                <label for="g-function">Función g(x):</label>
+                <input type="text" id="g-function" placeholder="Ej: (x^2 - 2)^(1/2) o deje vacío para usar x + f(x)">
             </div>
             
             <div class="conversion-info">
-                <p><strong>Nota:</strong> El sistema convierte automáticamente f(x) a g(x) usando la fórmula: g(x) = x + f(x)</p>
-                <p>Puede editar manualmente g(x) si necesita una forma diferente.</p>
+                <p><strong>Nota:</strong> Si no ingresa una función g(x), el sistema usará por defecto: g(x) = x + f(x)</p>
+                <p>Para que el método converja, g(x) debe cumplir con |g'(x)| &lt; 1 en el intervalo de interés.</p>
             </div>
             
             <div class="input-group">
@@ -518,53 +518,45 @@
                 calcularDerivada();
             }
             
-            // Si es el método de Punto Fijo, convertir f(x) a g(x)
+            // Si es el método de Punto Fijo, sugerir g(x)
             if (methodId === 'punto-fijo') {
-                convertirAGx();
+                sugerirGx();
             }
         }
         
-        // Función para convertir f(x) a g(x) = x + f(x)
-        function convertirAGx() {
+        // Función para sugerir g(x) = x + f(x) como valor por defecto
+        function sugerirGx() {
             const fExpr = document.getElementById('f-function').value;
-            if (!fExpr) {
-                document.getElementById('g-function').value = "";
-                return;
-            }
+            const gInput = document.getElementById('g-function');
             
-            try {
-                // Simplificar la expresión si es posible
-                let gExpr = "";
-                
-                if (fExpr.includes("x^2") && fExpr.includes("- x - 2")) {
-                    // Caso especial: x^2 - x - 2
-                    gExpr = "x^2 - 2";
-                } else if (fExpr.includes("e^(-x)") && fExpr.includes("- x")) {
-                    // Caso especial: e^(-x) - x
-                    gExpr = "e^(-x)";
-                } else {
-                    // Caso general: g(x) = x + f(x)
-                    gExpr = "x + (" + fExpr + ")";
+            // Solo sugerir si el campo g(x) está vacío
+            if (!gInput.value && fExpr) {
+                try {
+                    let gExpr = "x + (" + fExpr + ")";
                     
                     // Simplificar expresiones comunes
                     gExpr = gExpr.replace("+ (-", "- (");
                     gExpr = gExpr.replace("- (-", "+ (");
                     
-                    // Simplificar x + (x + ...) a 2x + ...
-                    if (gExpr.includes("x + (x")) {
-                        gExpr = gExpr.replace("x + (x", "2*x");
-                    }
-                    
-                    // Simplificar x + (-x + ...) a ...
-                    if (gExpr.includes("x + (-x")) {
-                        gExpr = gExpr.replace("x + (-x", "0");
-                    }
+                    // Establecer placeholder con la sugerencia
+                    gInput.placeholder = "Ej: (x^2 - 2)^(1/2) o deje vacío para usar: " + gExpr;
+                } catch (error) {
+                    gInput.placeholder = "Ej: (x^2 - 2)^(1/2) o deje vacío para usar: x + (" + fExpr + ")";
                 }
-                
-                document.getElementById('g-function').value = gExpr;
-            } catch (error) {
-                document.getElementById('g-function').value = "x + (" + fExpr + ")";
             }
+        }
+        
+        // Función para obtener la expresión g(x) a utilizar
+        function obtenerGx() {
+            const fExpr = document.getElementById('f-function').value;
+            let gExpr = document.getElementById('g-function').value;
+            
+            // Si no se ingresó g(x), usar x + f(x) por defecto
+            if (!gExpr && fExpr) {
+                gExpr = "x + (" + fExpr + ")";
+            }
+            
+            return gExpr;
         }
         
         // Función para alternar la edición de la derivada
@@ -582,93 +574,56 @@
             }
         }
         
-        // Función para calcular la derivada automáticamente
-        function calcularDerivada() {
-            if (derivadaEditable) return;
-            
-            const fExpr = document.getElementById('newton-function').value;
-            if (!fExpr) return;
-            
-            try {
-                // Simplificación: derivada de funciones comunes
-                let derivative = '';
-                
-                // Manejar e^(-x) - x
-                if (fExpr.includes('e^(-x)')) {
-                    derivative = fExpr.replace('e^(-x)', '-e^(-x)');
-                    if (fExpr.includes(' - x')) {
-                        derivative += ' - 1';
-                    } else if (fExpr.includes(' + x')) {
-                        derivative += ' + 1';
-                    }
-                }
-                // Manejar potencias: derivada de x^n es n*x^(n-1)
-                else if (fExpr.includes('x^')) {
-                    // Buscar patrones de potencias
-                    const powerPattern = /([+-]?)\s*(\d+\.?\d*)?\*?x\^(\d+)/g;
-                    let match;
-                    let terms = [];
-                    
-                    while ((match = powerPattern.exec(fExpr)) !== null) {
-                        const sign = match[1] || '+';
-                        const coefficient = match[2] ? parseFloat(match[2]) : 1;
-                        const exponent = parseFloat(match[3]);
-                        
-                        const newCoefficient = coefficient * exponent;
-                        const newExponent = exponent - 1;
-                        
-                        let term = '';
-                        if (newCoefficient !== 1) {
-                            term += newCoefficient + '*';
-                        }
-                        term += 'x';
-                        if (newExponent !== 1) {
-                            term += '^' + newExponent;
-                        }
-                        
-                        terms.push(sign + ' ' + term);
-                    }
-                    
-                    derivative = terms.join(' ');
-                    
-                    // Manejar términos constantes
-                    if (fExpr.includes(' - x') && !fExpr.includes('x^')) {
-                        derivative += ' - 1';
-                    } else if (fExpr.includes(' + x') && !fExpr.includes('x^')) {
-                        derivative += ' + 1';
-                    }
-                } else if (fExpr.includes('sin(x)')) {
-                    derivative = fExpr.replace(/sin\(x\)/g, 'cos(x)');
-                } else if (fExpr.includes('cos(x)')) {
-                    derivative = fExpr.replace(/cos\(x\)/g, '-sin(x)');
-                } else if (fExpr.includes('tan(x)')) {
-                    derivative = fExpr.replace(/tan\(x\)/g, '1/(cos(x)^2)');
-                } else if (fExpr.includes('log(x)') || fExpr.includes('ln(x)')) {
-                    derivative = fExpr.replace(/(log\(x\)|ln\(x\))/g, '1/x');
-                } else if (fExpr.includes('exp(x)') || fExpr.includes('e^x')) {
-                    derivative = fExpr.replace(/(exp\(x\)|e\^x)/g, 'exp(x)');
-                } else if (fExpr.includes('sqrt(x)')) {
-                    derivative = fExpr.replace(/sqrt\(x\)/g, '1/(2*sqrt(x))');
-                } else {
-                    // Derivada por defecto (aproximación para funciones simples)
-                    derivative = fExpr.replace(/x/g, '1');
-                }
-                
-                // Limpiar la derivada
-                derivative = derivative.replace(/\+\s*\-/g, '- ');
-                derivative = derivative.replace(/\-\s*\-/g, '+ ');
-                derivative = derivative.trim();
-                
-                // Si no se encontró ninguna derivada, usar un valor por defecto
-                if (derivative === fExpr) {
-                    derivative = fExpr.replace(/x/g, '1');
-                }
-                
-                document.getElementById('newton-derivative').value = derivative;
-            } catch (error) {
-                document.getElementById('newton-derivative').value = "Error calculando derivada";
-            }
-        }
+        // Función para calcular la derivada automáticamente con regla de la cadena
+function calcularDerivada() {
+    if (derivadaEditable) return;
+
+    const fExpr = document.getElementById('newton-function').value;
+    if (!fExpr) return;
+
+    try {
+        let derivative = fExpr;
+
+        // Derivada de e^(f(x))
+        derivative = derivative.replace(/e\^\(([^)]+)\)/g, (_, inner) => {
+            return `(${inner})'*e^(${inner})`;
+        });
+
+        // Derivada de ln(f(x))
+        derivative = derivative.replace(/ln\(([^)]+)\)/g, (_, inner) => {
+            return `(${inner})' / (${inner})`;
+        });
+
+        // Derivada de x^n
+        derivative = derivative.replace(/(\d*\.?\d*)\*?x\^(\d+)/g, (_, coef, exp) => {
+            coef = coef ? coef : 1;
+            exp = parseFloat(exp);
+            let newCoef = coef * exp;
+            let newExp = exp - 1;
+            return newExp === 0 ? `${newCoef}` : `${newCoef}*x^${newExp}`;
+        });
+
+        // Derivadas trigonométricas
+        derivative = derivative.replace(/sin\(x\)/g, 'cos(x)');
+        derivative = derivative.replace(/cos\(x\)/g, '-sin(x)');
+        derivative = derivative.replace(/tan\(x\)/g, '1/(cos(x)^2)');
+
+        // Derivada de sqrt(x)
+        derivative = derivative.replace(/sqrt\(x\)/g, '1/(2*sqrt(x))');
+
+        // Derivada de x simple
+        derivative = derivative.replace(/\bx\b/g, '1');
+
+        // Limpiar signos dobles
+        derivative = derivative.replace(/\+\s*\-/g, '- ').replace(/\-\s*\-/g, '+ ');
+        derivative = derivative.trim();
+
+        document.getElementById('newton-derivative').value = derivative;
+    } catch (error) {
+        document.getElementById('newton-derivative').value = "Error calculando derivada";
+    }
+}
+
         
         // Función para normalizar expresiones (manejar -e, -sin, etc.)
         function normalizarExpresion(expr) {
@@ -732,7 +687,7 @@
         
         // Método del Punto Fijo
         function calcularPuntoFijo() {
-            const gExpr = document.getElementById('g-function').value;
+            const gExpr = obtenerGx(); // Obtener g(x) (puede ser ingresada por usuario o por defecto)
             const x0 = parseFloat(document.getElementById('punto-fijo-x0').value);
             const errorMinimo = parseFloat(document.getElementById('punto-fijo-error').value);
             const maxIteraciones = parseInt(document.getElementById('punto-fijo-iterations').value);
@@ -817,7 +772,6 @@
             
             resultados.style.display = 'block';
         }
-        
         // Método de Newton-Raphson
         function calcularNewton() {
             const fExpr = document.getElementById('newton-function').value;
